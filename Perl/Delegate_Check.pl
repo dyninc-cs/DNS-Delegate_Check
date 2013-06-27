@@ -18,7 +18,6 @@
 
 use warnings;
 use strict;
-use Data::Dumper;
 use Config::Simple;
 use Getopt::Long;
 use LWP::UserAgent;
