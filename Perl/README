@@ -32,8 +32,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
 ___________________________________________________________________________________
 
 
-This script tests the delegation of a list of zones and returns the output in CSV format
-By default is will obtain a list of zones from a DynECT DNS account
+This script will test the delegation of a list of zones and returns the output in CSV format
+By default it will obtain a list of zones from a DynECT DNS account
 The credentials are read in from a configuration file in the same directory.
 The file is named credentials.cfg in the format:
 
