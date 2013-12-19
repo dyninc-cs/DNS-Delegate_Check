@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 #This script tests the delegation of a list of zones and returns the output in CSV format
 #By default is will obtain a list of zones from a DynECT DNS account
@@ -20,10 +20,13 @@ use warnings;
 use strict;
 use Config::Simple;
 use Getopt::Long;
-use LWP::UserAgent;
-use JSON;
 use Net::DNS;
+use Data::Dumper;
 
+#Import DynECT handler
+use FindBin;
+use lib $FindBin::Bin;  # use the parent directory
+use DynECT::DNS_REST;
 
 #Get Options
 my $opt_output;
@@ -83,43 +86,20 @@ if ( !$opt_file ) {
 		'password' => $apipw,
 		);
 
-	my $api_request = HTTP::Request->new('POST',$session_uri);
-	$api_request->header ( 'Content-Type' => 'application/json' );
-	$api_request->content( to_json( \%api_param ) );
+	#create a DynECT API object
+	my $dynect = DynECT::DNS_REST->new();
 
-	my $api_lwp = LWP::UserAgent->new;
-	$api_lwp->timeout(30);
-	my $api_result = $api_lwp->request( $api_request );
-	my $api_decode;
-	my $api_key;
-	if ($api_result->is_success) {
-		$api_decode = decode_json( $api_result->content);
-		$api_key = $api_decode->{'data'}->{'token'};
-	}
-	else {
-		die $api_result->status_line;
-	}
+	#login
+	$dynect->login( $apicn, $apiun, $apipw) or die $dynect->message;
 
-	my $zone_uri = "https://api2.dynect.net/REST/Zone/";
-	$api_request = HTTP::Request->new('GET',$zone_uri);
-	$api_request->header ( 'Content-Type' => 'application/json', 'Auth-Token' => $api_key );
-	$api_request->content( '' );
-	$api_result = $api_lwp->request($api_request);
-	$api_decode = decode_json( $api_result->content);
-	$api_decode = &api_fail(\$api_key, $api_decode) unless ($api_decode->{'status'} eq 'success');
+	$dynect->request( '/REST/Zone/', 'GET' ) or die $dynect->message; 
 
-	foreach my $zone ( @{$api_decode->{'data'}} ) {
+	foreach my $zone ( @{$dynect->result->{'data'}} ) {
 		$zone =~ m/\/REST\/Zone\/(\S+)\/$/;
 		push @zones, $1;
 	}
 
-	#api logout
-	$api_request = HTTP::Request->new('DELETE',$session_uri);
-	$api_request->header ( 'Content-Type' => 'application/json', 'Auth-Token' => $api_key );
-	$api_result = $api_lwp->request( $api_request );
-	$api_decode = decode_json ( $api_result->content);
-
-
+	$dynect->logout;
 }
 
 #reading from file
